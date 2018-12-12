@@ -1,6 +1,5 @@
 // HustBase.cpp : Defines the class behaviors for the application.
 //
-
 #include "stdafx.h"
 #include "HustBase.h"
 
@@ -164,22 +163,49 @@ void CHustBaseApp::OnAppAbout()
 void CHustBaseApp::OnCreateDB()
 {
 	//关联创建数据库按钮，此处应提示用户输入数据库的存储路径和名称，并调用CreateDB函数创建数据库。
-	CreateDB("C:\\Users\\LONG\\Desktop\\TEST\\test\\here", "testdb");
+	CFileDialog dlg(FALSE);
+	CString FileFolderName, FileName;
+
+	if (dlg.DoModal() != IDOK)
+	{
+		printf("Error!");
+		exit(-1);
+	}
+	FileFolderName = dlg.GetFolderPath();
+	FileName = dlg.GetFileName();
+	CreateDB(FileFolderName.GetBuffer(),FileName.GetBuffer());
 }
 
 void CHustBaseApp::OnOpenDB() 
 {
 	//关联打开数据库按钮，此处应提示用户输入数据库所在位置，并调用OpenDB函数改变当前数据库路径，并在界面左侧的控件中显示数据库中的表、列信息。
-	
-	/*CHustBaseDoc *pDoc;
+	CFolderPickerDialog dlg(FALSE);//选择模式。
+	CString FileFolderName;
+	if (dlg.DoModal() != IDOK)
+	{
+		printf("Error!");
+		exit(-1);
+	}
+	FileFolderName = dlg.GetFolderPath();//获取文件夹的绝对路径。
+	SetCurrentDirectory(FileFolderName);//改变当前工作路径。
+	CHustBaseDoc *pDoc;
 	pDoc=CHustBaseDoc::GetDoc();
 	CHustBaseApp::pathvalue=true;
-	pDoc->m_pTreeView->PopulateTree();*/
-	OpenDB("C:\\Users\\LONG\\Desktop\\TEST\\test\\here");
+	pDoc->m_pTreeView->PopulateTree();
+	OpenDB(pDoc->get_text.GetBuffer());
 }
 
 void CHustBaseApp::OnDropDb() 
 {
 	//关联删除数据库按钮，此处应提示用户输入数据库所在位置，并调用DropDB函数删除数据库的内容。
-	DropDB("C:\\Users\\LONG\\Desktop\\TEST\\test\\here\\testdb");
+	CFileDialog dlg(FALSE);
+	CString FileFolderName;
+
+	if (dlg.DoModal() != IDOK)
+	{
+		printf("Error!");
+		exit(-1);
+	}
+	FileFolderName = dlg.GetFolderPath();
+	DropDB(FileFolderName.GetBuffer());
 }

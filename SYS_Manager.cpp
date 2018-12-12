@@ -4,6 +4,13 @@
 #include "QU_Manager.h"
 #include <iostream>
 
+table_node *tablesHead;
+col_node *columnsHead;
+table_node *tableTail;
+col_node *columsTail;
+
+RM_FileHandle *rf;
+
 void ExecuteAndMessage(char * sql,CEditArea* editArea){//根据执行的语句类型在界面上显示执行结果。此函数需修改
 	std::string s_sql = sql;
 	if(s_sql.find("select") == 0){
@@ -98,6 +105,7 @@ RC execute(char * sql){
 
 			case 5:
 			//判断SQL语句为createTable语句
+
 			break;
 
 			case 6:	
@@ -144,33 +152,38 @@ RC CreateDB(char *dbpath,char *dbname){
 	//create system files
 	strcpy(tables, path);
 	strcat(tables, "\\SYSTABLES");
-	FILE *fp = fopen(tables, "w");
+	RC ret = RM_CreateFile(tables, 25);
+	if(ret != SUCCESS)
+	{
+		AfxMessageBox("failed to create system files");
+		return SQL_SYNTAX;
+	}
+	/*FILE *fp = fopen(tables, "w");
 	if(fp == NULL)
 	{
 		AfxMessageBox("failed to create system files");
 		return SQL_SYNTAX;
 	}
-	fclose(fp);
+	fclose(fp);*/
 	strcpy(cols, path);
 	strcat(cols, "\\SYSCOLUMNS");
-	fp = fopen(cols, "w");
+	ret = RM_CreateFile(cols, 72);
+	if(ret != SUCCESS)
+	{
+		AfxMessageBox("failed to create system files");
+		return SQL_SYNTAX;
+	}
+	/*fp = fopen(cols, "w");
 	if(fp == NULL)
 	{
 		AfxMessageBox("failed to create system files");
 		return SQL_SYNTAX;
 	}
-	fclose(fp);
+	fclose(fp);*/
 	return SUCCESS;
 }
 
 RC DropDB(char *dbname){
-	/*int ret;
-	ret = rmdir(dbname);
-	if(ret == -1)
-	{
-		AfxMessageBox("failed to drop database");
-		return SQL_SYNTAX;
-	}*/
 	char cmd[256];
 	strcpy(cmd, "rd /s /q ");
 	strcat(cmd, dbname);
@@ -179,15 +192,29 @@ RC DropDB(char *dbname){
 }
 
 RC OpenDB(char *dbname){
-	printf("%s\n", dbname);
+	RM_OpenFile(dbname, rf);
 	return SUCCESS;
 }
-
 
 RC CloseDB(){
+	RM_CloseFile(rf);
 	return SUCCESS;
 }
 
+RC CreateTable(char *relName,int attrCount,AttrInfo *attributes)
+{
+	/*table_node newTable;
+	strcpy(newTable.tablename, relName);
+	newTable.attrcount = attrCount;
+	tables.push_back(newTable);*/
+	return SUCCESS;
+}
+RC DropTable(char *relName);
+RC CreateIndex(char *indexName,char *relName,char *attrName);
+RC DropIndex(char *indexName);
+RC Insert(char *relName,int nValues,Value * values);
+RC Delete(char *relName,int nConditions,Condition *conditions);
+RC Update(char *relName,char *attrName,Value *value,int nConditions,Condition *conditions);
 bool CanButtonClick(){//需要重新实现
 	//如果当前有数据库已经打开
 	return true;

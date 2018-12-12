@@ -1,6 +1,5 @@
 // EditArea.cpp : implementation file
 //
-
 #include "stdafx.h"
 
 #include "str.h"
@@ -200,7 +199,8 @@ int CEditArea::iReadDictstruct(char tabname[][20],int *tabnum,char colname[][20]
 	CString t;//test
 
 	int i=0,j=0;
-	DWORD cchCurDir; 
+	//DWORD cchCurDir;
+	DWORD cchCurDir = 200;
 	LPTSTR lpszCurDir; 	
 	TCHAR tchBuffer[BUFFER]; 
 	lpszCurDir = tchBuffer; 

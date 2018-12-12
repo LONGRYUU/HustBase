@@ -12,7 +12,6 @@
 */
 #include<stdlib.h>
 #include<string.h>
-
 //属性结构体
 typedef struct  {
   char *relName;     // relation name (may be NULL) 表名
@@ -139,6 +138,23 @@ typedef struct {
 	int flag;	/*match to the sqls 0--error;1--select;2--insert;3--update;4--delete;5--create table;6--drop table;7--create index;8--drop index;9--help;10--exit;*/
  	union sqls sstr;
 }sqlstr;
+
+struct table_node
+{
+    char tablename[21];
+    int attrcount;
+};
+
+struct col_node
+{
+    char tablename[21];
+    char attrname[21];
+    int attrtype;
+    int attrlength;
+    int attroffset;
+    char ix_flag;
+    char indexname[21];
+};
 
 #ifndef RC_HH
 #define RC_HH
