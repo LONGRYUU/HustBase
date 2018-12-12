@@ -127,14 +127,59 @@ RC execute(char * sql){
 }
 
 RC CreateDB(char *dbpath,char *dbname){
+	char path[256];
+	char tables[256];
+	char cols[256];
+	//create dir
+	strcpy(path, dbpath);
+	strcat(path, "\\");
+	strcat(path, dbname); 
+	int ret;
+	ret = mkdir(path);
+	if(ret == -1)
+	{
+		AfxMessageBox("failed to create new database");
+		return SQL_SYNTAX;
+	}
+	//create system files
+	strcpy(tables, path);
+	strcat(tables, "\\SYSTABLES");
+	FILE *fp = fopen(tables, "w");
+	if(fp == NULL)
+	{
+		AfxMessageBox("failed to create system files");
+		return SQL_SYNTAX;
+	}
+	fclose(fp);
+	strcpy(cols, path);
+	strcat(cols, "\\SYSCOLUMNS");
+	fp = fopen(cols, "w");
+	if(fp == NULL)
+	{
+		AfxMessageBox("failed to create system files");
+		return SQL_SYNTAX;
+	}
+	fclose(fp);
 	return SUCCESS;
 }
 
 RC DropDB(char *dbname){
+	/*int ret;
+	ret = rmdir(dbname);
+	if(ret == -1)
+	{
+		AfxMessageBox("failed to drop database");
+		return SQL_SYNTAX;
+	}*/
+	char cmd[256];
+	strcpy(cmd, "rd /s /q ");
+	strcat(cmd, dbname);
+	system(cmd);
 	return SUCCESS;
 }
 
 RC OpenDB(char *dbname){
+	printf("%s\n", dbname);
 	return SUCCESS;
 }
 
