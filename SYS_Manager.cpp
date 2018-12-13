@@ -4,12 +4,8 @@
 #include "QU_Manager.h"
 #include <iostream>
 
-table_node *tablesHead;
-col_node *columnsHead;
-table_node *tableTail;
-col_node *columsTail;
-
-RM_FileHandle *rf;
+RM_FileHandle *trfh = NULL;
+RM_FileHandle *crfh = NULL;
 
 void ExecuteAndMessage(char * sql,CEditArea* editArea){//根据执行的语句类型在界面上显示执行结果。此函数需修改
 	std::string s_sql = sql;
@@ -152,34 +148,22 @@ RC CreateDB(char *dbpath,char *dbname){
 	//create system files
 	strcpy(tables, path);
 	strcat(tables, "\\SYSTABLES");
+	strcpy(cols, path);
+	strcat(cols, "\\SYSCOLUMNS");
+	
 	RC ret = RM_CreateFile(tables, 25);
 	if(ret != SUCCESS)
 	{
 		AfxMessageBox("failed to create system files");
 		return SQL_SYNTAX;
 	}
-	/*FILE *fp = fopen(tables, "w");
-	if(fp == NULL)
-	{
-		AfxMessageBox("failed to create system files");
-		return SQL_SYNTAX;
-	}
-	fclose(fp);*/
-	strcpy(cols, path);
-	strcat(cols, "\\SYSCOLUMNS");
+
 	ret = RM_CreateFile(cols, 72);
 	if(ret != SUCCESS)
 	{
 		AfxMessageBox("failed to create system files");
 		return SQL_SYNTAX;
 	}
-	/*fp = fopen(cols, "w");
-	if(fp == NULL)
-	{
-		AfxMessageBox("failed to create system files");
-		return SQL_SYNTAX;
-	}
-	fclose(fp);*/
 	return SUCCESS;
 }
 
@@ -192,32 +176,164 @@ RC DropDB(char *dbname){
 }
 
 RC OpenDB(char *dbname){
-	RM_OpenFile(dbname, rf);
+	char path[256];
+	strcpy(path, dbname);
+	strcat(path, "\\SYSTABLES");
+	RC ret = RM_OpenFile(dbname, trfh);
+	if(ret != SUCCESS)
+	{
+		AfxMessageBox("failed to open database systables");
+		return SQL_SYNTAX;
+	}
+	strcpy(path, dbname);
+	strcat("\\SYSCOLUMNS");
+	ret = RM_OpenFile(dbname, crfh);
+	if(ret != SUCCESS)
+	{
+		AfxMessageBox("failed to open database syscolumns");
+		return SQL_SYNTAX;
+	}
 	return SUCCESS;
 }
 
 RC CloseDB(){
-	RM_CloseFile(rf);
+	RC ret = RM_CloseFile(trfh);
+	if(ret != SUCCESS)
+	{
+		AfxMessageBox("failed to close database systables");
+		return SQL_SYNTAX;
+	}
+	ret = RM_CloseFile(crfh);
+	if(ret != SUCCESS)
+	{
+		AfxMessageBox("failed to close database syscolumns");
+		return SQL_SYNTAX;
+	}
 	return SUCCESS;
 }
 
 RC CreateTable(char *relName,int attrCount,AttrInfo *attributes)
 {
-	/*table_node newTable;
-	strcpy(newTable.tablename, relName);
-	newTable.attrcount = attrCount;
-	tables.push_back(newTable);*/
+	if(trfh == NULL || crfh == NULL || trfh->bOpen == false || crfh->bOpen == false)
+	{
+		AfxMessageBox("please open a database first");
+		return SQL_SYNTAX;
+	}
+	if(IsCreated(relName))
+	{
+		AfxMessageBox("table already created");
+		return SQL_SYNTAX;
+	}
+
+	//update SYSTABLES;
+	char tableRec[25];
+	RID rid;
+	strcpy(tableRec, relName);
+	sprintf(tableRec + 21, "%d", attrCount);
+	RC ret = InsertRec(trfh, tableRec, &rid);
+	if(ret != SUCCESS)
+	{
+		AfxMessageBox("failed to update SYSTABLES");
+		return SQL_SYNTAX;
+	}
+	//update SYSCOLUMNS
+	int i = 0;
+	int offset = 0;
+	while(i < attrCount)
+	{
+		char columnRec[72];
+		strcpy(columnRec, relName);
+		strcpy(columnRec + 21, attributes[i].attrName);
+		sprintf(columnRec + 42, "%d", attributes[i].attrType);
+		sprintf(columnRec + 46, "%d", attributes[i].attrLength);
+		sprintf(columnRec + 50, "%d", offset);
+		columnRec[54] = '0';
+		ret = InsertRec(crfh, columnRec, &rid);
+		if(ret != SUCCESS)
+		{
+			AfxMessageBox("failed to update SYSCOLUMNS");
+			return SQL_SYNTAX;
+		}
+		offset += attributes[i].attrLength;
+	}
+	//create table record file;
+	ret = RM_CreateFile(relName, offset);
+	if(ret != SUCCESS)
+	{
+		AfxMessageBox("failed to create table file");
+		return SQL_SYNTAX;
+	}
 	return SUCCESS;
 }
-RC DropTable(char *relName);
-RC CreateIndex(char *indexName,char *relName,char *attrName);
-RC DropIndex(char *indexName);
-RC Insert(char *relName,int nValues,Value * values);
-RC Delete(char *relName,int nConditions,Condition *conditions);
-RC Update(char *relName,char *attrName,Value *value,int nConditions,Condition *conditions);
+RC DropTable(char *relName)
+{
+	//get rid;
+	RM_FileScan rfs;
+
+	RC ret = OpenScan(&rfs, trfh, 0, NULL);
+
+	RM_Record rr;
+	ret = GetNextRec(&rfs, &rr);
+	while(true)
+	{
+		
+	}
+
+	// update SYSTABLES;
+	ret = DeleteRec(trfh, rr.rid);	
+
+	// update SYSCOLUMNS;
+	OpenScan(&rfs, crfh, 0, NULL);
+	while(true)
+	{
+		ret = GetNextRec(&rfs, &rr);
+		if(ret != SUCCESS) break;
+	}	
+
+	//delete table record file;
+	char cmd[256];
+	strcpy(cmd, "del ");
+	strcat(cmd, relName);
+	system(cmd);
+	//delete indices;
+	return SUCCESS;
+}
+RC CreateIndex(char *indexName,char *relName,char *attrName)
+{
+
+}
+RC DropIndex(char *indexName)
+{
+
+}
+RC Insert(char *relName,int nValues,Value * values)
+{
+	//scan and check existence;
+
+	//insert record;
+	
+	//build index;
+
+}
+RC Delete(char *relName,int nConditions,Condition *conditions)
+{
+
+}
+RC Update(char *relName,char *attrName,Value *value,int nConditions,Condition *conditions)
+{
+
+}
 bool CanButtonClick(){//需要重新实现
 	//如果当前有数据库已经打开
-	return true;
+	if(trfh != NULL && crfh != NULL)
+		return true;
 	//如果当前没有数据库打开
-	//return false;
+	else return false;
+}
+
+bool IsCreated(char *path)
+{
+	int ret = _access(path, 0);
+	if(ret == 0) return true;
+	return false;
 }

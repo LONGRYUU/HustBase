@@ -8,6 +8,7 @@
 
 void ExecuteAndMessage(char * ,CEditArea*);
 bool CanButtonClick();
+bool IsCreated(char *path);
 
 RC CreateDB(char *dbpath,char *dbname);
 RC DropDB(char *dbname);
