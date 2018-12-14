@@ -20,3 +20,9 @@ void Destory_Result(SelResult * res){
 RC Query(char * sql,SelResult * res){
 	return SUCCESS;
 }
+
+RC Select(int nSelAttrs,RelAttr **selAttrs,int nRelations,char **relations,int nConditions,Condition *conditions,SelResult * res)
+{
+	
+	return SUCCESS;
+}

@@ -208,8 +208,8 @@ int CEditArea::iReadDictstruct(char tabname[][20],int *tabnum,char colname[][20]
 	
 	CString	Path=lpszCurDir;
 
-	CString table=Path+"\\SYSTABLES.xx";
-	CString column=Path+"\\SYSCOLUMNS.xx";
+	CString table=Path+"\\SYSTABLES";
+	CString column=Path+"\\SYSCOLUMNS";
 
 	rc=RM_OpenFile((LPSTR)(LPCTSTR)table,&fileHandle);//去SYSTABLES表中获取表名
 	if(rc!=SUCCESS)

@@ -25,4 +25,6 @@ RC Insert(char *relName,int nValues,Value * values);
 RC Delete(char *relName,int nConditions,Condition *conditions);
 RC Update(char *relName,char *attrName,Value *value,int nConditions,Condition *conditions);
 
+void HandleError(RC ret);
+
 #endif

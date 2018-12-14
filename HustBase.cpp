@@ -198,9 +198,8 @@ void CHustBaseApp::OnOpenDB()
 void CHustBaseApp::OnDropDb() 
 {
 	//关联删除数据库按钮，此处应提示用户输入数据库所在位置，并调用DropDB函数删除数据库的内容。
-	CFileDialog dlg(FALSE);
+	CFolderPickerDialog dlg(FALSE);//选择模式。
 	CString FileFolderName;
-
 	if (dlg.DoModal() != IDOK)
 	{
 		printf("Error!");
