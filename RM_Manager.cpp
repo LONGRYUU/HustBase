@@ -62,13 +62,6 @@ RC RM_CreateFile (char *fileName, int recordSize)
 	if(rc != SUCCESS) return rc;
 	rc = UnpinPage(&pfpagehandle);
 	if(rc != SUCCESS) return rc;
-	rc = AllocatePage(&pffilehandle,&pfpagehandle);
-	if(rc != SUCCESS) return rc;
-	rc = MarkDirty(&pfpagehandle);
-	if(rc != SUCCESS) return rc;
-	rc = UnpinPage(&pfpagehandle);
-	if(rc != SUCCESS) return rc;
-
 	rc = CloseFile(&pffilehandle);
 	if(rc != SUCCESS) return rc;
 	return SUCCESS;
