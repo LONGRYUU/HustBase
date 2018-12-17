@@ -308,48 +308,220 @@ RC DropTable(char *relName)
 }
 RC CreateIndex(char *indexName,char *relName,char *attrName)
 {
-	/*char fileName[256];
-	sprintf(fileName, "%s_%s", relName, indexName);
 	//get attr info;
 	RM_FileScan rfs;
 	RM_Record rec;
-	RC ret = OpenScan(&rfs, crfh, 0, NULL);
+	RC ret = OpenScan(&rfs, &crfh, 0, NULL);
 	while(GetNextRec(&rfs, &rec) != RM_EOF)
 	{
 		if((strstr(rec.pData, relName) == rec.pData) && (strstr(rec.pData + 21, attrName) == (rec.pData + 21)))
 		{
-			//update syscolumns;
-			rec.pData[55] = '1';
-			strcpy(rec.pData + 55, attrName);
-			UpdateRec(crfh, &rec);
-			break;
+			if(rec.pData[54] == '0')
+			{
+				//update syscolumns;
+				rec.pData[54] = '1';
+				strcpy(rec.pData + 55, attrName);
+				UpdateRec(&crfh, &rec);
+				break;
+			}
+			else
+			{
+				AfxMessageBox("an index was created on this attr");
+				return SQL_SYNTAX;
+			}
 		}
 	}
 	AttrType attrType;
 	int attrLength;
 	sscanf(rec.pData + 42, "%d%d", &attrType, &attrLength);
-	CreateIndex(fileName, attrType, attrLength);*/
+	CreateIndex(indexName, attrType, attrLength);
 	return SUCCESS;
 }
 RC DropIndex(char *indexName)
 {
-	return SUCCESS;
+	RM_FileScan rfs;
+	RM_Record rec;
+	RC ret = OpenScan(&rfs, &crfh, 0, NULL);
+	while(GetNextRec(&rfs, &rec) != RM_EOF)
+	{
+		if(rec.pData[54] == '1')
+		{
+			if(strcmp(indexName, rec.pData + 55) == 0)
+			{
+				rec.pData[54] = '0';
+				char cmd[256];
+				strcpy(cmd, "del ");
+				strcat(cmd, indexName);
+				system(cmd);
+				return SUCCESS;
+			}
+		}
+	}
+	return SQL_SYNTAX;
 }
 RC Insert(char *relName,int nValues,Value * values)
 {
-	//scan and check existence;
-
-	//insert record;
 	
+	//scan and check existence;
+	RM_Record rec;
+	RM_FileScan rfs;
+	Con condition;
+	condition.bLhsIsAttr = 1;
+	condition.bRhsIsAttr = 0;
+	condition.attrType = chars;
+	condition.LattrLength = 21;
+	condition.LattrOffset = 0;
+	condition.compOp = EQual;
+	condition.Rvalue = relName;
+	RC ret = OpenScan(&rfs, &crfh, 1, &condition);
+	int *offsets = (int *)malloc(sizeof(int) * nValues);
+	int i = 0;
+	while(GetNextRec(&rfs, &rec) != RM_EOF)
+	{
+		sscanf(rec.pData, "%d", &offsets[i]);
+		i++;
+	}
+	//insert record;
+	char pData[256];
+	for(int i = 0; i < nValues; i++)
+	{
+		
+		switch (values[i].type)
+		{
+			case chars:
+				strcpy(pData + offsets[i], (char *)values[i].data);
+				break;
+			case ints:
+				sscanf((char *)values[i].data, "%d", pData + offsets[i]);
+				break;
+			case floats:
+				sscanf((char *)values[i].data, "%f", pData + offsets[i]);
+				break;
+			default:
+				break;
+		}
+	}
+	RM_FileHandle tab;
+	ret = RM_OpenFile(relName, &tab);
+	RID rid;
+	InsertRec(&tab, pData,&rid);
 	//build index;
+
+
+	free(offsets);
 	return SUCCESS;
 }
+
+void scanCols(char *relName, char *attrName, int* len, AttrType* type, int *offset)
+{
+	RM_FileScan rfs;		
+	Con* con = (Con*)malloc(sizeof(Con) * 2);
+	con[0].bLhsIsAttr = 1;
+	con[0].bRhsIsAttr = 0;
+	con[0].attrType = chars;
+	con[0].LattrLength = 21;
+	con[0].LattrOffset = 0;
+	con[0].compOp = EQual;
+	con[0].Rvalue = relName;
+	con[1].bLhsIsAttr = 1;
+	con[1].bRhsIsAttr = 0;
+	con[1].attrType = chars;
+	con[1].LattrLength = 21;
+	con[1].LattrOffset = 0;
+	con[1].compOp = EQual;
+	con[1].Rvalue = attrName;
+	OpenScan(&rfs, &crfh, 2, con);
+	RM_Record rec;
+	while(GetNextRec(&rfs, &rec) != RM_EOF)
+	{
+		sscanf(rec.pData + 42, "%d", type);
+		sscanf(rec.pData + 46, "%d", len);
+		sscanf(rec.pData + 50, "%d", offset);
+		break;
+	}
+	free(con);
+}
+
+void Condi2Con(int n, Condition* conditions, Con* cons)
+{
+	for(int i = 0; i < n; i++)
+	{
+		cons[i].bLhsIsAttr = conditions[i].bLhsIsAttr;
+		if(cons[i].bLhsIsAttr)
+		{
+			scanCols(conditions[i].lhsAttr.relName, conditions[i].lhsAttr.relName, &cons[i].LattrLength, &cons[i].attrType, &cons[i].LattrOffset);
+		}
+		else
+		{
+			cons[i].attrType = conditions[i].lhsValue.type;
+			cons[i].Lvalue = conditions[i].lhsValue.data;
+		}
+		cons[i].bRhsIsAttr = conditions[i].bRhsIsAttr;
+		if(cons[i].bRhsIsAttr)
+		{
+			scanCols(conditions[i].rhsAttr.relName, conditions[i].rhsAttr.relName, &cons[i].RattrLength, &cons[i].attrType, &cons[i].RattrOffset);	
+		}
+		else
+		{
+			cons[i].attrType = conditions[i].rhsValue.type;
+			cons[i].Rvalue = conditions[i].rhsValue.data;
+		}
+		cons[i].compOp = conditions[i].op;
+	}
+}
+
 RC Delete(char *relName,int nConditions,Condition *conditions)
 {
+	RM_FileScan rfs;
+	RM_FileHandle tab;
+	RC ret = RM_OpenFile(relName, &tab);
+	Con* cons = (Con *) malloc(sizeof(Con) * nConditions);
+	Condi2Con(nConditions, conditions, cons);
+	ret = OpenScan(&rfs, &tab, nConditions, cons);
+	RM_Record rec;
+	while(GetNextRec(&rfs, &rec) != RM_EOF)
+	{
+		ret = DeleteRec(&tab, &rec.rid);
+	}
 	return SUCCESS;
 }
 RC Update(char *relName,char *attrName,Value *value,int nConditions,Condition *conditions)
 {
+	RM_FileScan rfs;
+	//get the offset of the attr;	
+	Con condition;
+	condition.bLhsIsAttr = 1;
+	condition.bRhsIsAttr = 0;
+	condition.attrType = chars;
+	condition.LattrLength = 21;
+	condition.LattrOffset = 0;
+	condition.compOp = EQual;
+	condition.Rvalue = relName;
+	//handle index;
+
+	// update record;
+	RC ret = OpenScan(&rfs, &crfh, 1, &condition);
+	int offset;
+	RM_Record rec;
+	while(GetNextRec(&rfs, &rec) != RM_EOF)
+	{
+		if(strcmp(attrName, rec.pData + 21) == 0)
+		{
+			sscanf(rec.pData + 48, "%d", &offset);
+			break;
+		}
+	}
+
+	RM_FileHandle tab;
+	ret = RM_OpenFile(relName, &tab);
+	Con* cons = (Con*)malloc(sizeof(Con)*nConditions);
+	Condi2Con(nConditions, conditions, cons);
+	ret = OpenScan(&rfs, &tab, nConditions, cons);
+	while(GetNextRec(&rfs, &rec) != RM_EOF)
+	{
+		sprintf(rec.pData + offset, "%d", value->data);
+		ret = UpdateRec(&tab, &rec);
+	}
 	return SUCCESS;
 }
 bool CanButtonClick(){//需要重新实现

@@ -17,4 +17,7 @@ RC GetIndexTree(char *fileName, Tree *index){
 		return SUCCESS;
 }
 
-
+RC CreateIndex(const char * fileName,AttrType attrType,int attrLength)
+{
+	return SUCCESS;
+}
