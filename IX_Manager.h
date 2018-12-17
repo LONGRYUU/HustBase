@@ -63,4 +63,8 @@ RC IX_GetNextEntry(IX_IndexScan *indexScan,RID * rid);
 RC CloseIndexScan(IX_IndexScan *indexScan);
 RC GetIndexTree(char *fileName, Tree *index);
 
+int Compare_Data(AttrType type, const char *L_Data, const char *R_Data);
+int Compare_RID(const RID *L_RID, const RID *R_RID);
+int Swap_Data_RID(AttrType type, int length, char *L_Data, char *R_Data, RID *L_RID, RID *R_RID);
+RC InsertPage(IX_IndexHandle *indexHandle, PageNum pageNum, char *pData, RID * rid);
 #endif
