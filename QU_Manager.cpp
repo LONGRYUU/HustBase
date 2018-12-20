@@ -18,6 +18,17 @@ void Destory_Result(SelResult * res){
 }
 
 RC Query(char * sql,SelResult * res){
+	sqlstr *sql_str = NULL;
+	RC rc;
+	sql_str = get_sqlstr();
+	rc = parse(sql, sql_str);
+	if(rc == SUCCESS)
+	{
+		if(sql_str->flag)
+		{
+			Select(sql_str->sstr.sel.nSelAttrs, sql_str->sstr.sel.selAttrs, sql_str->sstr.sel.nRelations, sql_str->sstr.sel.relations, sql_str->sstr.sel.nConditions,sql_str->sstr.sel.conditions, res);
+		}
+	}
 	return SUCCESS;
 }
 

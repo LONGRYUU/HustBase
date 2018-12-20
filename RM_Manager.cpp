@@ -95,3 +95,7 @@ RC RM_CloseFile(RM_FileHandle *fileHandle)
 	fileHandle->bOpen = false;
 	return SUCCESS;
 }
+RC CloseScan(RM_FileScan *rmFileScan)
+{
+	return SUCCESS;
+}
