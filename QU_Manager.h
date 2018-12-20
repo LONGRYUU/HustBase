@@ -1,6 +1,8 @@
 #ifndef __QUERY_MANAGER_H_
 #define __QUERY_MANAGER_H_
 #include "str.h"
+#include "RM_Manager.h"
+#include "IX_Manager.h"
 
 typedef struct SelResult{
 	int col_num;
@@ -11,6 +13,12 @@ typedef struct SelResult{
 	char ** res[100];	//最多一百条记录
 	SelResult * next_res;
 }SelResult;
+
+typedef struct RidList
+{
+	RID *rid;
+	RidList *next;
+}RidList;
 
 void Init_Result(SelResult * res);
 void Destory_Result(SelResult * res);
