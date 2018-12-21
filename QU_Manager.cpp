@@ -71,17 +71,47 @@ int isIndex(char *relName, char *attrName, char *indexName)
 	return 0;
 }
 
-
+int getOffset(char* relName, char* attrName)
+{
+	RM_FileScan rfs;
+	Con* cons[2];
+	cons[0].bLhsIsAttr = 1;
+	cons[0].bRhsIsAttr = 0;
+	cons[0].attrType = chars;
+	cons[0].LattrLength = 21;
+	cons[0].LattrOffset = 0;
+	cons[0].compOp = EQual;
+	cons[0].Rvalue = relName;
+	cons[1].bLhsIsAttr = 1;
+	cons[1].bRhsIsAttr = 0;
+	cons[1].attrType = chars;
+	cons[1].LattrLength = 21;
+	cons[1].LattrOffset = 21;
+	cons[1].compOp = EQual;
+	cons[1].Rvalue = attrName;
+	OpenScan(&rfs, &crfh, 2, cons);
+	RM_Record rec;
+	int offset;
+	while(GetNextRec(&rfs, &rec) != RM_EOF)
+	{
+		sscanf(rec.pData + 50, "%d", &offset);
+		break;
+	}
+	return offset;
+}
 
 RC Select(int nSelAttrs,RelAttr **selAttrs,int nRelations,char **relations,int nConditions,Condition *conditions,SelResult * res)
 {
-	RidList *head = NULL;
+	RidList *head = (RidList *)malloc(sizeof(RidList));
+	head->rid = NULL;
+	head->next = NULL;
 	RidList *tail = head;
 	int num = 0;
 	if(nRelations == 1)
 	{
 		RM_FileHandle rfh;
 		RM_OpenFile(relations[0], &rfh);
+		int index = -1;
 		for(int i = 0; i < nConditions; i++)
 		{
 			char indexName[21];
@@ -95,16 +125,34 @@ RC Select(int nSelAttrs,RelAttr **selAttrs,int nRelations,char **relations,int n
 					OpenIndexScan(&is, &ih, conditions[i].op, (char*)conditions[i].rhsValue.data);
 					RID rid;
 					RM_Record rec;
-					while(IX_GetNextEntry(&is, &rid))
+					while(IX_GetNextEntry(&is, &rid) != RM_EOF)
 					{
 						GetRec(&rfh, &rid, &rec);
-						
+						RidList* node = (RidList *)malloc(sizeof(RidList));
+						node.rid = &rid;
+						node.next = NULL;
+						tail->next = node;
+						tail = node;
 					}
+					index = i;
+					break;
 				}
 			}
-			else
-			{
+		}
+		if(index >= 0)
+		{
 
+		}
+		else
+		{
+			RM_FileScan rfs;
+			Con *cons = (Con *)malloc(sizeof(Con));
+			Condi2Con(nConditions, conditions, cons);
+			OpenScan(&rfs, &crfh, nConditions, cons);
+			RM_Record rec;
+			while(GetNextRec(&rfs, &rec) != RM_EOF)
+			{
+				for(int i = 0; i < )
 			}
 		}
 	}

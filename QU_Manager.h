@@ -22,7 +22,11 @@ typedef struct RidList
 
 void Init_Result(SelResult * res);
 void Destory_Result(SelResult * res);
-
+extern "C"
+{
+	void scanCols(char *relName, char *attrName, int* len, AttrType* type, int *offset);
+	void Condi2Con(int n, Condition* conditions, Con* cons);
+}
 RC Query(char * sql,SelResult * res);
 
 RC Select(int nSelAttrs,RelAttr **selAttrs,int nRelations,char **relations,int nConditions,Condition *conditions,SelResult * res);
